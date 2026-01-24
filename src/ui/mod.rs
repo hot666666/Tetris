@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::data::{App, BlockColor, BOARD_HEIGHT, BOARD_WIDTH};
+use crate::game::{App, BOARD_HEIGHT, BOARD_WIDTH, BlockColor};
 
 pub fn render(app: &App, frame: &mut ratatui::Frame) {
     let area = frame.area();
@@ -252,7 +252,12 @@ fn render_preview_piece(app: &App, area: Rect, buf: &mut Buffer) {
                 let rx = start_x + (px as u16 * 2);
                 let ry = start_y + py as u16;
                 if rx < area.x + area.width && ry < area.y + area.height {
-                    buf.set_string(rx, ry, "██", Style::default().fg(to_ratatui_color(piece.color)));
+                    buf.set_string(
+                        rx,
+                        ry,
+                        "██",
+                        Style::default().fg(to_ratatui_color(piece.color)),
+                    );
                 }
             }
         }

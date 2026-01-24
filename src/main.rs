@@ -1,10 +1,8 @@
-mod data;
-mod ui;
-
 use std::io;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::DefaultTerminal;
-use data::App;
+use tetris::game::App;
+use tetris::ui;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
@@ -25,7 +23,7 @@ fn run_app(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
                         KeyCode::Left => app.move_left(),
                         KeyCode::Right => app.move_right(),
                         KeyCode::Down => app.soft_drop(),
-                        // Add more key handlers here
+                        KeyCode::Up => app.rotate(),
                         _ => {}
                     }
                 }
