@@ -1,5 +1,7 @@
+use std::mem;
+
 use crate::game::board::Board;
-use crate::game::piece::{Piece, TetrominoType};
+use crate::game::piece::{Piece, PieceGenerator, RandomPieceGenerator};
 use crate::game::{BOARD_HEIGHT, BOARD_WIDTH};
 
 pub struct App {
@@ -9,19 +11,25 @@ pub struct App {
     pub score: u32,
     pub is_game_over: bool,
     pub exit: bool,
+    pub generator: Box<dyn PieceGenerator>,
 }
 
 // MARK: - 생성 관련
 
 impl App {
     pub fn new() -> Self {
+        let mut generator = RandomPieceGenerator::new();
+        let current_piece = Some(generator.next_piece());
+        let next_piece = generator.next_piece();
+
         Self {
             board: Board::default(),
-            current_piece: Some(Piece::new(TetrominoType::I)),
-            next_piece: Piece::new(TetrominoType::I),
+            current_piece,
+            next_piece,
             score: 0,
             is_game_over: false,
             exit: false,
+            generator: Box::new(generator),
         }
     }
 
@@ -138,8 +146,9 @@ impl App {
             self.score += (lines_cleared * 10) as u32;
         }
 
-        // 다음 블록을 생성
-        self.current_piece = Some(self.next_piece.clone());
-        self.next_piece = Piece::new(TetrominoType::I);
+        // 다음 블록을 생성 
+        // MARK: - 교체 방식: 복사 없이 소유권 이동
+        let new_next_piece = self.generator.next_piece();
+        self.current_piece = Some(mem::replace(&mut self.next_piece, new_next_piece));
     }
 }

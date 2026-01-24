@@ -1,4 +1,5 @@
 use crate::game::BOARD_WIDTH;
+use rand::{Rng, SeedableRng};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum TetrominoType {
@@ -33,6 +34,18 @@ impl TetrominoType {
             TetrominoType::Z => super::BlockColor::Red,
             TetrominoType::J => super::BlockColor::Blue,
             TetrominoType::L => super::BlockColor::Orange,
+        }
+    }
+
+    pub fn from_index(index: usize) -> Self {
+        match index % 7 {
+            0 => TetrominoType::I,
+            1 => TetrominoType::O,
+            2 => TetrominoType::T,
+            3 => TetrominoType::S,
+            4 => TetrominoType::Z,
+            5 => TetrominoType::J,
+            _ => TetrominoType::L,
         }
     }
 }
@@ -73,4 +86,53 @@ impl Piece {
         }
         self.shape = new_shape;
     }   
+}
+
+// MARK: - Trait PieceGenerator
+
+pub trait PieceGenerator {
+    // 다음 조각을 하나 반환합니다.
+    fn next_piece(&mut self) -> Piece;
+}
+
+pub struct RandomPieceGenerator {
+    generator: rand::rngs::StdRng,
+}
+
+// MARK: - Implementation
+
+impl RandomPieceGenerator {
+    pub fn new() -> Self {
+        Self {
+            generator: rand::rngs::StdRng::from_os_rng(),
+        }
+    }
+}
+
+impl PieceGenerator for RandomPieceGenerator {
+    fn next_piece(&mut self) -> Piece {
+        let piece_type = self.generator.random_range(0..7);
+        Piece::new(TetrominoType::from_index(piece_type))
+    }
+}
+
+#[cfg(test)]
+struct ConstantPieceGenerator {
+    piece_type_index: usize,
+}
+
+#[cfg(test)]
+impl ConstantPieceGenerator {
+    fn new(piece_type_index: usize) -> Self {
+        Self { piece_type_index }
+    }
+}
+
+#[cfg(test)]
+impl PieceGenerator for ConstantPieceGenerator {
+    fn next_piece(&mut self) -> Piece {
+        let piece_type = TetrominoType::from_index(self.piece_type_index);
+        self.piece_type_index = (self.piece_type_index + 1) % 7;
+        Piece::new(piece_type)
+    }
 }
