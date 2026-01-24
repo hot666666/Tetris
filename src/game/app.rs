@@ -1,4 +1,4 @@
-use std::mem;
+
 
 use crate::game::board::Board;
 use crate::game::piece::{Piece, PieceGenerator, RandomPieceGenerator};
@@ -7,8 +7,10 @@ use crate::game::{BOARD_HEIGHT, BOARD_WIDTH};
 pub struct App {
     pub board: Board,
     pub current_piece: Option<Piece>,
-    pub next_piece: Piece,
+    pub next_pieces: Vec<Piece>,
+    pub hold_piece: Option<Piece>,
     pub score: u32,
+    pub lines_cleared: u32,
     pub is_game_over: bool,
     pub exit: bool,
     pub generator: Box<dyn PieceGenerator>,
@@ -20,13 +22,18 @@ impl App {
     pub fn new() -> Self {
         let mut generator = RandomPieceGenerator::new();
         let current_piece = Some(generator.next_piece());
-        let next_piece = generator.next_piece();
+        let mut next_pieces = Vec::new();
+        for _ in 0..3 {
+            next_pieces.push(generator.next_piece());
+        }
 
         Self {
             board: Board::default(),
             current_piece,
-            next_piece,
+            next_pieces,
+            hold_piece: None,
             score: 0,
+            lines_cleared: 0,
             is_game_over: false,
             exit: false,
             generator: Box::new(generator),
@@ -144,11 +151,11 @@ impl App {
         let lines_cleared = self.board.clear_full_lines();
         if lines_cleared > 0 {
             self.score += (lines_cleared * 10) as u32;
+            self.lines_cleared += lines_cleared as u32;
         }
 
-        // 다음 블록을 생성 
-        // MARK: - 교체 방식: 복사 없이 소유권 이동
-        let new_next_piece = self.generator.next_piece();
-        self.current_piece = Some(mem::replace(&mut self.next_piece, new_next_piece));
+        // 다음 블록을 가져오고 새 블록을 큐에 추가
+        self.current_piece = Some(self.next_pieces.remove(0));
+        self.next_pieces.push(self.generator.next_piece());
     }
 }

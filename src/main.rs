@@ -19,7 +19,7 @@ fn run_app(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     match key.code {
-                        KeyCode::Char('q') => app.exit(),
+                        KeyCode::Char('q') | KeyCode::Char('ㅂ') => app.exit(),
                         KeyCode::Left => app.move_left(),
                         KeyCode::Right => app.move_right(),
                         KeyCode::Down => app.move_down(),
