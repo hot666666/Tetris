@@ -22,7 +22,7 @@ fn run_app(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
                         KeyCode::Char('q') => app.exit(),
                         KeyCode::Left => app.move_left(),
                         KeyCode::Right => app.move_right(),
-                        KeyCode::Down => app.soft_drop(),
+                        KeyCode::Down => app.move_down(),
                         KeyCode::Up => app.rotate(),
                         _ => {}
                     }

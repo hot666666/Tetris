@@ -1,27 +1,118 @@
-use tetris::game::{App, BlockColor, Board, Piece, TetrominoType};
+// 부모의 비공개 항목을 가져올 때 crate:: 보단 super::를 사용
+use super::*;
+
+// MARK: - Line Clearing Tests
+
+#[test]
+fn should_clear_full_lines() {
+    let mut board = Board::default();
+    
+    // Fill the bottom line
+    for x in 0..BOARD_WIDTH {
+        board.set(x, BOARD_HEIGHT - 1, BlockColor::Cyan);
+    }
+    
+    // Fill the line above it
+    for x in 0..BOARD_WIDTH {
+        board.set(x, BOARD_HEIGHT - 2, BlockColor::Red);
+    }
+
+    // Call clear_full_lines
+    let cleared = board.clear_full_lines();
+    
+    // Expect 2 lines cleared
+    assert_eq!(cleared, 2);
+    
+    // Review: Bottom lines should now be empty (default is None)
+    // But wait, if we cleared lines, the lines above (which were empty) should have fallen down.
+    // So the bottom line should be empty.
+    for x in 0..BOARD_WIDTH {
+        assert!(board.get(x as i32, (BOARD_HEIGHT - 1) as i32).is_none());
+        assert!(board.get(x as i32, (BOARD_HEIGHT - 2) as i32).is_none());
+    }
+}
+
+#[test]
+fn should_drop_blocks_above_cleared_lines() {
+    let mut board = Board::default();
+    
+    // Setup:
+    // Line 19 (Bottom): Full
+    // Line 18: Full
+    // Line 17: Partial (Some blocks)
+    
+    for x in 0..BOARD_WIDTH {
+        board.set(x, BOARD_HEIGHT - 1, BlockColor::Cyan);
+        board.set(x, BOARD_HEIGHT - 2, BlockColor::Cyan);
+    }
+    
+    // Add a block at (0, 17)
+    board.set(0, BOARD_HEIGHT - 3, BlockColor::Red);
+    
+    let cleared = board.clear_full_lines();
+    assert_eq!(cleared, 2);
+    
+    // Expect: 
+    // The block at (0, 17) should drop 2 lines to (0, 19).
+    assert_eq!(board.get(0, (BOARD_HEIGHT - 1) as i32), Some(BlockColor::Red));
+    
+    // Original position should be empty
+    assert!(board.get(0, (BOARD_HEIGHT - 3) as i32).is_none());
+}
+
+#[test]
+fn should_detect_collision_with_left_wall() {
+    let mut app = App::new().with_current_piece(Piece::new(TetrominoType::I));
+    if let Some(piece) = &mut app.current_piece {
+        piece.x = -1;
+    }
+    let piece = app.current_piece.as_ref().unwrap();
+    assert!(App::is_colliding(&app.board, piece));
+}
+
+#[test]
+fn should_detect_collision_with_right_wall() {
+    let mut app = App::new().with_current_piece(Piece::new(TetrominoType::I));
+    if let Some(piece) = &mut app.current_piece {
+        piece.x = 10;
+    }
+    let piece = app.current_piece.as_ref().unwrap();
+    assert!(App::is_colliding(&app.board, piece));
+}
+
+#[test]
+fn should_detect_collision_with_floor() {
+    let mut app = App::new().with_current_piece(Piece::new(TetrominoType::I));
+    if let Some(piece) = &mut app.current_piece {
+        piece.y = 20;
+    }
+    let piece = app.current_piece.as_ref().unwrap();
+    assert!(App::is_colliding(&app.board, piece));
+}
+
+#[test]
+fn should_detect_collision_with_existing_blocks() {
+    let mut board = Board::default();
+    board.set(3, 1, BlockColor::Red);
+    let app = App::new()
+        .with_board(board)
+        .with_current_piece(Piece::new(TetrominoType::I));
+    let piece = app.current_piece.as_ref().unwrap();
+    assert!(App::is_colliding(&app.board, piece));
+}
+
+// MARK: - Rotation Tests
 
 #[test]
 fn should_not_rotate_if_collision_occurs() {
-    // Given: T-piece near a wall or block
     let mut board = Board::default();
-    board.set_cell(4, 2, BlockColor::Red);
-
-    // T at (3,0)
+    board.set(4, 2, BlockColor::Red);
     let mut app = App::new()
         .with_board(board)
         .with_current_piece(Piece::new(TetrominoType::T));
-
     let original_shape = app.current_piece.as_ref().unwrap().shape;
-
-    // When: Attempt to rotate
     app.rotate();
-
-    // Then: Shape should remain unchanged
-    let current_shape = app.current_piece.as_ref().unwrap().shape;
-    assert_eq!(
-        current_shape, original_shape,
-        "Piece should NOT rotate if target cells are blocked"
-    );
+    assert_eq!(app.current_piece.as_ref().unwrap().shape, original_shape);
 }
 
 #[test]
