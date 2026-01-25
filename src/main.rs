@@ -1,7 +1,7 @@
 use std::io;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::DefaultTerminal;
-use tetris::game::App;
+use tetris::game::{App, Key};
 use tetris::ui;
 
 fn main() -> io::Result<()> {
@@ -18,13 +18,19 @@ fn run_app(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Char('ㅂ') => app.exit(),
-                        KeyCode::Left => app.move_left(),
-                        KeyCode::Right => app.move_right(),
-                        KeyCode::Down => app.move_down(),
-                        KeyCode::Up => app.rotate(),
-                        _ => {}
+                    let game_key = match key.code {
+                        KeyCode::Char('q') => Some(Key::Quit),
+                        KeyCode::Char('h') => Some(Key::Hold),
+                        KeyCode::Char(' ') => Some(Key::QuickDrop),
+                        KeyCode::Left => Some(Key::Left),
+                        KeyCode::Right => Some(Key::Right),
+                        KeyCode::Down => Some(Key::Down),
+                        KeyCode::Up => Some(Key::Rotate),
+                        _ => None,
+                    };
+
+                    if let Some(gk) = game_key {
+                        app.handle_input(gk);
                     }
                 }
             }

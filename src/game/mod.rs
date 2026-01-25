@@ -1,6 +1,7 @@
 pub mod app;
 pub mod board;
 pub mod piece;
+pub mod input;
 
 // 편의성을 위한 재포장 (Re-export)
 // 외부(main.rs)에서 쓸 때 경로를 짧게 줄여주는 역할입
@@ -8,6 +9,7 @@ pub mod piece;
 // 이게 있으면: use tetris::game::App;
 pub use app::App;
 pub use board::{BlockColor, Board};
+pub use input::Key;
 pub use piece::{Piece, TetrominoType};
 
 // 전역 상수

@@ -174,10 +174,10 @@ fn render_board(app: &App, area: Rect, buf: &mut Buffer) {
     block.render(area, buf);
 
     // Render static blocks
-    for y in 0..BOARD_HEIGHT {
-        for x in 0..BOARD_WIDTH {
+    for y in 0..app.board.height {
+        for x in 0..app.board.width {
             if let Some(color) = app.board.grid[y][x] {
-                render_cell(inner_area, x as i32, y as i32, to_ratatui_color(color), buf);
+                render_cell(inner_area, x as i32, y as i32, app.board.width as i32, app.board.height as i32, to_ratatui_color(color), buf);
             }
         }
     }
@@ -191,6 +191,8 @@ fn render_board(app: &App, area: Rect, buf: &mut Buffer) {
                         inner_area,
                         piece.x + px as i32,
                         piece.y + py as i32,
+                        app.board.width as i32,
+                        app.board.height as i32,
                         to_ratatui_color(piece.color),
                         buf,
                     );
@@ -200,8 +202,8 @@ fn render_board(app: &App, area: Rect, buf: &mut Buffer) {
     }
 }
 
-fn render_cell(inner_area: Rect, x: i32, y: i32, color: Color, buf: &mut Buffer) {
-    if x >= 0 && x < BOARD_WIDTH as i32 && y >= 0 && y < BOARD_HEIGHT as i32 {
+fn render_cell(inner_area: Rect, x: i32, y: i32, board_width: i32, board_height: i32, color: Color, buf: &mut Buffer) {
+    if x >= 0 && x < board_width && y >= 0 && y < board_height {
         let rx = inner_area.x + (x as u16 * 2);
         let ry = inner_area.y + y as u16;
 
@@ -216,7 +218,7 @@ fn render_left_panel(app: &App, area: Rect, buf: &mut Buffer) {
         .constraints([
             Constraint::Length(6), // Hold (Title + 4 height + Border)
             Constraint::Fill(1),   // Spacer
-            Constraint::Length(10), // Keys
+            Constraint::Length(11), // Keys
         ])
         .split(area);
 
@@ -230,11 +232,7 @@ fn render_left_panel(app: &App, area: Rect, buf: &mut Buffer) {
 
     if let Some(piece) = &app.hold_piece {
         render_preview_piece(piece, hold_inner, buf);
-    } else {
-        // Placeholder for visual feedback as requested
-        let placeholder = crate::game::piece::Piece::new(crate::game::piece::TetrominoType::I);
-        render_preview_piece(&placeholder, hold_inner, buf);
-    }
+    } 
 
     // Keys Panel
     let controls = vec![
@@ -242,7 +240,8 @@ fn render_left_panel(app: &App, area: Rect, buf: &mut Buffer) {
         Line::from("(←) Left"),
         Line::from("(→) Right"),
         Line::from("(↑) Rotate"),
-        Line::from("(↓) Drop"),
+        Line::from("(↓) Down"),
+        Line::from("(Space) Drop"),
         Line::from("(H) Hold"),
         Line::from(""),
         Line::from("(Q) Quit"),

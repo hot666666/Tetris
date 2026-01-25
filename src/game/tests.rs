@@ -1,6 +1,22 @@
 // 부모의 비공개 항목을 가져올 때 crate:: 보단 super::를 사용
 use super::*;
 
+// MARK: - Helpers
+
+fn place_piece(board: &mut Board, piece: &Piece) {
+    for y in 0..4 {
+        for x in 0..4 {
+            if piece.shape[y][x] != 0 {
+                let bx = piece.x + x as i32;
+                let by = piece.y + y as i32;
+                if bx >= 0 && bx < board.width as i32 && by >= 0 && by < board.height as i32 {
+                    board.set(bx as usize, by as usize, piece.color);
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Line Clearing Tests
 
 #[test]
@@ -391,4 +407,97 @@ fn should_rotate_l_piece_full_cycle() {
         expected_0,
         "L-Piece: 270 -> 0"
     );
+}
+
+// MARK: - Hold & QuickDrop Tests
+
+#[test]
+fn should_hold_piece_and_swap_with_next() {
+    // Given
+    let mut app = App::new();
+    let initial_current = app.current_piece.as_ref().unwrap().piece_type;
+    let initial_next = app.next_pieces[0].piece_type;
+
+    // When
+    app.hold();
+
+    // Then
+    assert_eq!(app.hold_piece.as_ref().unwrap().piece_type, initial_current);
+    assert_eq!(app.current_piece.as_ref().unwrap().piece_type, initial_next);
+    assert!(app.has_held_this_turn);
+}
+
+#[test]
+fn should_swap_current_with_held_piece() {
+    // Given
+    let piece_i = Piece::new(TetrominoType::I);
+    let piece_o = Piece::new(TetrominoType::O);
+    let mut app = App::new()
+        .with_current_piece(piece_i)
+        .with_hold_piece(piece_o);
+
+    // When
+    app.hold();
+
+    // Then
+    assert_eq!(app.hold_piece.as_ref().unwrap().piece_type, TetrominoType::I);
+    assert_eq!(app.current_piece.as_ref().unwrap().piece_type, TetrominoType::O);
+}
+
+#[test]
+fn should_only_hold_once_per_turn() {
+    // Given
+    let mut app = App::new();
+    app.hold();
+    let held_after_first = app.hold_piece.as_ref().unwrap().piece_type;
+
+    // When (Try holding again immediately)
+    app.hold();
+    
+    // Then (Should still be the same, didn't swap back)
+    assert_eq!(app.hold_piece.as_ref().unwrap().piece_type, held_after_first);
+}
+
+#[test]
+fn should_reset_hold_limit_after_commit() {
+    // Given
+    let mut app = App::new();
+    app.hold();
+    assert!(app.has_held_this_turn);
+
+    // O piece near the bottom to force lock
+    let mut piece = Piece::new(TetrominoType::O);
+    piece.y = 18; 
+    app = app.with_current_piece(piece);
+    
+    // When (Piece locked and committed)
+    app.move_down(); 
+    
+    // Then
+    assert!(!app.has_held_this_turn);
+}
+
+#[test]
+fn should_hard_drop_piece_to_bottom() {
+    // Given
+    let mut piece = Piece::new(TetrominoType::O);
+    piece.x = 1;
+    piece.y = 0;
+
+    let board = Board::new(5, 10);
+    let mut app = App::new()
+        .with_board(board.clone())
+        .with_current_piece(piece.clone());
+
+    // When
+    app.quick_drop();
+    
+    // Then
+    // 5x10 보드에서 O-piece(2x2)가 바닥에 닿으면 piece.y는 8이 됨
+    let mut expected_board = board;
+    let mut expected_piece = piece;
+    expected_piece.y = 8;
+    place_piece(&mut expected_board, &expected_piece);
+    
+    assert_eq!(app.board, expected_board, "Hard drop failed to land piece at expected coordinates correctly");
 }
