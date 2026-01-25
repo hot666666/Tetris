@@ -7,7 +7,7 @@ pub mod input;
 // 외부(main.rs)에서 쓸 때 경로를 짧게 줄여주는 역할입
 // 이게 없으면: use tetris::game::app::App;
 // 이게 있으면: use tetris::game::App;
-pub use app::App;
+pub use app::{App, GameOverOption};
 pub use board::{BlockColor, Board};
 pub use input::Key;
 pub use piece::{Piece, TetrominoType};

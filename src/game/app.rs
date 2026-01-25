@@ -3,6 +3,12 @@ use crate::game::board::Board;
 use crate::game::input::Key;
 use crate::game::piece::{Piece, PieceGenerator, RandomPieceGenerator};
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum GameOverOption {
+    Restart,
+    Quit,
+}
+
 pub struct App {
     pub board: Board,
     pub current_piece: Option<Piece>,
@@ -13,6 +19,7 @@ pub struct App {
     pub score: u32,
     pub lines_cleared: u32,
     pub is_game_over: bool,
+    pub game_over_menu_option: GameOverOption,
     pub exit: bool,
 }
 
@@ -37,8 +44,29 @@ impl App {
             score: 0,
             lines_cleared: 0,
             is_game_over: false,
+            game_over_menu_option: GameOverOption::Restart,
             exit: false,
         }
+    }
+
+    pub fn restart(&mut self) {
+        let mut generator = RandomPieceGenerator::new();
+        let current_piece = Some(generator.next_piece());
+        let mut next_pieces = Vec::new();
+        for _ in 0..3 {
+            next_pieces.push(generator.next_piece());
+        }
+
+        self.board = Board::default();
+        self.current_piece = current_piece;
+        self.next_pieces = next_pieces;
+        self.hold_piece = None;
+        self.generator = Box::new(generator);
+        self.has_held_this_turn = false;
+        self.score = 0;
+        self.lines_cleared = 0;
+        self.is_game_over = false;
+        self.game_over_menu_option = GameOverOption::Restart;
     }
 
     #[cfg(test)]
@@ -65,9 +93,13 @@ impl App {
 impl App {
     pub fn handle_input(&mut self, key: Key) {
         if self.is_game_over {
-            return;
+            self.handle_game_over_input(key);
+        } else {
+            self.handle_gameplay_input(key);
         }
+    }
 
+    fn handle_gameplay_input(&mut self, key: Key) {
         match key {
             Key::Left => self.move_left(),
             Key::Right => self.move_right(),
@@ -76,6 +108,26 @@ impl App {
             Key::Hold => self.hold(),
             Key::QuickDrop => self.quick_drop(),
             Key::Quit => self.exit(),
+            _ => {},
+        }
+    }
+
+    fn handle_game_over_input(&mut self, key: Key) {
+        match key {
+            Key::Left | Key::Down | Key::Right | Key::Rotate => {
+                self.game_over_menu_option = match self.game_over_menu_option {
+                    GameOverOption::Restart => GameOverOption::Quit,
+                    GameOverOption::Quit => GameOverOption::Restart,
+                };
+            }
+            Key::Enter | Key::QuickDrop => {
+                match self.game_over_menu_option {
+                    GameOverOption::Restart => self.restart(),
+                    GameOverOption::Quit => self.exit(),
+                }
+            }
+            Key::Quit => self.exit(),
+            _ => {},
         }
     }
 
@@ -211,8 +263,15 @@ impl App {
         }
 
         // 다음 블록을 가져오고 새 블록을 큐에 추가
-        self.current_piece = Some(self.next_pieces.remove(0));
+        let next_piece = self.next_pieces.remove(0);
         self.next_pieces.push(self.generator.next_piece());
+
+        // 게임 오버 체크: 새로운 블록이 생성되자마자 충돌하는지 확인
+        if Self::is_colliding(&self.board, &next_piece) {
+            self.is_game_over = true;
+        }
+
+        self.current_piece = Some(next_piece);
         self.has_held_this_turn = false;
     }
 }

@@ -7,9 +7,9 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::game::{App, BOARD_HEIGHT, BOARD_WIDTH, BlockColor};
+use crate::game::{App, BOARD_HEIGHT, BOARD_WIDTH, BlockColor, GameOverOption};
 
-    pub fn render(app: &App, frame: &mut ratatui::Frame) {
+pub fn render(app: &App, frame: &mut ratatui::Frame) {
     let area = frame.area();
 
     // Game container dimensions
@@ -85,6 +85,10 @@ use crate::game::{App, BOARD_HEIGHT, BOARD_WIDTH, BlockColor};
     render_left_panel(app, chunks[0], frame.buffer_mut());
     render_board(app, chunks[2], frame.buffer_mut());
     render_right_panel(app, chunks[4], frame.buffer_mut());
+
+    if app.is_game_over {
+        render_game_over_overlay(app, chunks[2], frame.buffer_mut());
+    }
 }
 
 fn render_title(area: Rect, buf: &mut Buffer) {
@@ -395,5 +399,56 @@ fn render_preview_piece(piece: &crate::game::piece::Piece, area: Rect, buf: &mut
                 }
             }
         }
+    }
+}
+
+fn render_game_over_overlay(app: &App, area: Rect, buf: &mut Buffer) {
+    // Semi-transparent like effect using a block with a title
+    let overlay_width = 18;
+    let overlay_height = 10;
+    let x = area.x + (area.width.saturating_sub(overlay_width)) / 2;
+    let y = area.y + (area.height.saturating_sub(overlay_height)) / 2;
+    let overlay_area = Rect::new(x, y, overlay_width, overlay_height);
+
+    // Clear the area first (optional, but helps with visibility)
+    for row in y..y + overlay_height {
+        for col in x..x + overlay_width {
+            if let Some(cell) = buf.cell_mut((col, row)) {
+                cell.set_char(' ');
+                cell.set_style(Style::default().bg(Color::Black));
+            }
+        }
+    }
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Red).bold())
+        .title(" GAME OVER ");
+    
+    let inner = block.inner(overlay_area);
+    block.render(overlay_area, buf);
+
+    let score_text = format!("Score: {}", app.score);
+    buf.set_string(
+        inner.x + (inner.width.saturating_sub(score_text.len() as u16)) / 2,
+        inner.y + 1,
+        &score_text,
+        Style::default().fg(Color::Yellow),
+    );
+
+    let options = [(GameOverOption::Restart, " Restart "), (GameOverOption::Quit, "  Quit   ")];
+    for (i, (opt_type, opt_text)) in options.iter().enumerate() {
+        let style = if *opt_type == app.game_over_menu_option {
+            Style::default().bg(Color::White).fg(Color::Black).bold()
+        } else {
+            Style::default().fg(Color::Gray)
+        };
+
+        buf.set_string(
+            inner.x + (inner.width.saturating_sub(opt_text.len() as u16)) / 2,
+            inner.y + 4 + i as u16 * 2,
+            opt_text,
+            style,
+        );
     }
 }

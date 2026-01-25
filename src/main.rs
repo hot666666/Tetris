@@ -22,6 +22,7 @@ fn run_app(terminal: &mut DefaultTerminal, mut app: App) -> io::Result<()> {
                         KeyCode::Char('q') => Some(Key::Quit),
                         KeyCode::Char('h') => Some(Key::Hold),
                         KeyCode::Char(' ') => Some(Key::QuickDrop),
+                        KeyCode::Enter => Some(Key::Enter),
                         KeyCode::Left => Some(Key::Left),
                         KeyCode::Right => Some(Key::Right),
                         KeyCode::Down => Some(Key::Down),

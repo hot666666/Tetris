@@ -3,8 +3,8 @@ pub enum Key {
     Right,
     Down,
     Rotate,
-    QuickDrop, // Optional: if we want to support space drop
+    QuickDrop,
     Hold,
     Quit,
-    // Add other keys as needed
+    Enter,
 }
