@@ -9,13 +9,12 @@ pub mod input;
 // 이게 있으면: use tetris::game::App;
 pub use app::{App, GameOverOption};
 pub use board::{BlockColor, Board};
-pub use input::Key;
+pub use input::{Key, Event};
 pub use piece::{Piece, TetrominoType};
 
 // 전역 상수
 pub const BOARD_WIDTH: usize = 10;
 pub const BOARD_HEIGHT: usize = 20;
 
-// cfg(test): 'cargo test' 할 때만 이 코드를 컴파일 (배포판엔 포함 X)
 #[cfg(test)]
 mod tests;
